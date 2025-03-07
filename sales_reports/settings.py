@@ -137,7 +137,7 @@ LOGGING = {
         'django': {
             'handlers': ['console', 'file'],
             'level': 'DEBUG',
-            'propagate': True,
+            'propagate': False,
         },
         'your_app_name': {  # Замените на имя вашего приложения
             'handlers': ['console', 'file'],
