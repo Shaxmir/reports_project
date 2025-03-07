@@ -82,8 +82,8 @@ DATABASES = {
         'NAME': 'sales_reports',
         'USER': 'soddos',
         'PASSWORD': 'Shax312mir',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'HOST': '185.255.133.33',
+        'PORT': '8001',
     }
 }
 
