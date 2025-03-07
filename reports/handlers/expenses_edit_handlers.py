@@ -29,9 +29,7 @@ async def get_expenses(message: types.Message):
         await message.answer("❌ Расходов сегодня не было.")
         return
 
-    expense_list = []
-    keyboard = InlineKeyboardBuilder()
-
+    # Для каждого расхода отправляем отдельное сообщение
     for expense in expenses:
         expense_text = (
             f"📌 *{expense.reason}*\n"
@@ -39,15 +37,16 @@ async def get_expenses(message: types.Message):
             f"   - Комментарий: {expense.comment if expense.comment else 'Нет'}\n"
             f"-"
         )
-        expense_list.append(expense_text)
+
+        keyboard = InlineKeyboardBuilder()
 
         # Добавляем кнопки "Удалить" и "Изменить" для каждого расхода
         keyboard.button(text="❌ Удалить", callback_data=f"delete_expense_{expense.id}")
         keyboard.button(text="✏ Изменить", callback_data=f"edit_expense_{expense.id}")
 
-    report_text = "📋 *Список всех расходов за сегодня:*\n\n" + "\n".join(expense_list)
+        # Отправляем сообщение с расходом и кнопками
+        await message.answer(expense_text, reply_markup=keyboard.as_markup())
 
-    await message.answer(report_text, reply_markup=keyboard.as_markup())
 
 async def delete_expense(expense_id: int):
     """Удаление расхода через API"""
