@@ -10,6 +10,12 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 import logging
 from decimal import Decimal
+from django.db.models import Sum
+from django.http import JsonResponse
+from django.utils.timezone import now
+from .models import Sale, Expense, CashRegister
+from datetime import date
+
 
 logger = logging.getLogger(__name__)
 
@@ -26,14 +32,11 @@ class CashRegisterViewSet(viewsets.ModelViewSet):
     serializer_class = CashRegisterSerializer
 
 
-from django.db.models import Sum
-from django.http import JsonResponse
-from django.utils.timezone import now
-from .models import Sale, Expense, CashRegister
+
 
 def daily_report(request):
-    today = now().date()
-    
+    today = date.today()
+
     sales = Sale.objects.filter(sale_date=today)
     expenses = Expense.objects.filter(date=today)
     cash = CashRegister.objects.filter(date=today).last()
