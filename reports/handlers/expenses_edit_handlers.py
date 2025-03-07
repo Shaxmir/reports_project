@@ -9,7 +9,7 @@ from asgiref.sync import sync_to_async
 from datetime import date
 from reports.models import Expense
 
-API_URL = "http://127.0.0.1:8000/api/expenses/"
+API_URL = "http://185.255.133.33:8001/api/expenses/"
 
 # Определяем состояние для редактирования
 class EditExpenseState(StatesGroup):
