@@ -112,6 +112,30 @@ def add_expense(request):
 
     return JsonResponse({"error": "Метод не поддерживается"}, status=405)
 
+# Изменения расхода
+@csrf_exempt
+@transaction.atomic
+def update_expense(request, expense_id):
+    if request.method == "PATCH":
+        try:
+            data = json.loads(request.body)
+            new_amount = data.get("amount")
+            expense = Expense.objects.get(id=expense_id)
+
+            if new_amount:
+                expense.amount = new_amount
+                expense.save()
+                return JsonResponse({"message": "✅ Расход обновлен!"}, status=200)
+
+            return JsonResponse({"error": "Некорректные данные!"}, status=400)
+        except Expense.DoesNotExist:
+            return JsonResponse({"error": "Расход не найден!"}, status=404)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Метод не поддерживается"}, status=405)
+
+
 
 
 

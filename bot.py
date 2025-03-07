@@ -8,7 +8,7 @@ import logging
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sales_reports.settings")
 django.setup()
 
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
@@ -35,6 +35,10 @@ dp.message.register(expense_handlers.start_expense, Command("expense"))
 dp.message.register(expense_handlers.process_reason, expense_handlers.ExpenseState.reason)
 dp.message.register(expense_handlers.process_amount, expense_handlers.ExpenseState.amount)
 dp.message.register(expense_handlers.process_expense_comment, expense_handlers.ExpenseState.comment)
+# Хендлеры для вывода расходов и их изменение
+dp.message.register(expense_handlers.list_expenses, Command("all_expenses"))
+dp.callback_query.register(expense_handlers.delete_expense, F.data.startswith("delete_"))
+dp.callback_query.register(expense_handlers.edit_expense, F.data.startswith("edit_"))
 
 # Регистрируем хендлеры для работы с кассой
 dp.message.register(cash_handlers.start_cash, Command("cash"))
