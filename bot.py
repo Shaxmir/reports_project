@@ -31,6 +31,18 @@ dp.message.register(sale_handlers.process_sale_date, sale_handlers.SaleState.sal
 dp.message.register(sale_handlers.process_shipment_date, sale_handlers.SaleState.shipment_date)
 dp.message.register(sale_handlers.process_comment, sale_handlers.SaleState.comment)
 
+# Регистрация обработчиков для callback-запросов
+dp.callback_query.register(sale_edit_handlers.show_sale_info, lambda c: c.data.startswith("sale_"))
+dp.callback_query.register(sale_edit_handlers.delete_sale, lambda c: c.data.startswith("delete_sale_"))
+dp.callback_query.register(sale_edit_handlers.start_edit_sale, lambda c: c.data.startswith("edit_sale_"))
+
+# Регистрация обработчиков для изменения продажи
+dp.message.register(sale_edit_handlers.process_edit_name, sale_edit_handlers.EditSaleState.name)
+dp.message.register(sale_edit_handlers.process_edit_quantity, sale_edit_handlers.EditSaleState.quantity)
+dp.message.register(sale_edit_handlers.process_edit_price, sale_edit_handlers.EditSaleState.price)
+dp.message.register(sale_edit_handlers.process_edit_payment, sale_edit_handlers.EditSaleState.payment_method)
+dp.message.register(sale_edit_handlers.process_edit_comment, sale_edit_handlers.EditSaleState.comment)
+
 # Регистрируем хендлеры для расходов
 dp.message.register(expense_handlers.start_expense, Command("expense"))
 dp.message.register(expense_handlers.process_reason, expense_handlers.ExpenseState.reason)
