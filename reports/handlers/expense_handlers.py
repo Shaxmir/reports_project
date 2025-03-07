@@ -7,7 +7,7 @@ from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 
-API_URL = "http://127.0.0.1:8000/api/"
+API_URL = "http://185.255.133.33:8001/api/"
 
 class ExpenseState(StatesGroup):
     reason = State()
