@@ -18,7 +18,8 @@ bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
 # Импорт обработчиков из пакета handlers
-from reports.handlers import sale_handlers, expense_handlers, cash_handlers, report_handlers
+from reports.handlers import sale_handlers, expense_handlers, cash_handlers, report_handlers, expenses_edit_handlers
+from reports.handlers.expenses_edit_handlers import EditExpenseState
 
 # Регистрируем хендлеры для продажи
 dp.message.register(sale_handlers.start_sale, Command("sale"))
@@ -35,6 +36,14 @@ dp.message.register(expense_handlers.start_expense, Command("expense"))
 dp.message.register(expense_handlers.process_reason, expense_handlers.ExpenseState.reason)
 dp.message.register(expense_handlers.process_amount, expense_handlers.ExpenseState.amount)
 dp.message.register(expense_handlers.process_expense_comment, expense_handlers.ExpenseState.comment)
+
+# Редактирование и удаление расходов
+dp.message.register(expenses_edit_handlers.get_expenses, Command("expenses"))  # Вывод списка расходов
+dp.callback_query.register(expenses_edit_handlers.delete_expense_callback, lambda c: c.data.startswith("delete_expense_"))  # Удаление
+dp.callback_query.register(expenses_edit_handlers.edit_expense_callback, lambda c: c.data.startswith("edit_expense_"))  # Изменение
+dp.message.register(expenses_edit_handlers.edit_expense_amount, EditExpenseState.amount)  # Ввод суммы
+dp.message.register(expenses_edit_handlers.edit_expense_comment, EditExpenseState.comment)  # Ввод комментария
+dp.message.register(expenses_edit_handlers.edit_expense_reason, EditExpenseState.reason)  # Ввод причины
 
 # Регистрируем хендлеры для работы с кассой
 dp.message.register(cash_handlers.start_cash, Command("cash"))
