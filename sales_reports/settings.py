@@ -83,7 +83,7 @@ DATABASES = {
         'USER': 'soddos',
         'PASSWORD': 'Shax312mir',
         'HOST': '185.255.133.33',
-        'PORT': '8001',
+        'PORT': '5432',
     }
 }
 
