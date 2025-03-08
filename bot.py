@@ -18,7 +18,7 @@ bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
 # Импорт обработчиков из пакета handlers
-from reports.handlers import sale_handlers, expense_handlers, cash_handlers, report_handlers, expenses_edit_handlers
+from reports.handlers import sale_handlers, expense_handlers, cash_handlers, report_handlers, expenses_edit_handlers, sale_edit_handlers
 from reports.handlers.expenses_edit_handlers import EditExpenseState
 
 # Регистрируем хендлеры для продажи
