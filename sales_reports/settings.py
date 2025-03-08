@@ -163,3 +163,9 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 if not BOT_TOKEN:
     raise ValueError("❌ BOT_TOKEN не найден в .env файле!")
+
+
+# Роли
+
+CREATOR_ID = int(os.getenv("CREATOR_ID"))
+ADMIN_IDS = [int(id) for id in os.getenv("ADMIN_IDS").split(",")]
