@@ -32,6 +32,7 @@ dp.message.register(sale_handlers.process_shipment_date, sale_handlers.SaleState
 dp.message.register(sale_handlers.process_comment, sale_handlers.SaleState.comment)
 
 # Регистрация обработчиков для callback-запросов
+dp.message.register(sale_edit_handlers.get_all_sales, Command("sales"))
 dp.callback_query.register(sale_edit_handlers.show_sale_info, lambda c: c.data.startswith("sale_"))
 dp.callback_query.register(sale_edit_handlers.delete_sale, lambda c: c.data.startswith("delete_sale_"))
 dp.callback_query.register(sale_edit_handlers.start_edit_sale, lambda c: c.data.startswith("edit_sale_"))
