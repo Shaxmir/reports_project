@@ -118,7 +118,7 @@ async def send_report_pdf(message: Message):
         await message.answer("❌ Нет данных о продажах и расходах за сегодня.")
         return
     cash_balance = await get_cash_balance()
-    pdf_data = generate_pdf(sales, expenses, cash_balance)
+    pdf_data = generate_pdf(sales, expenses, cash_balance, today)
     pdf_filename = "report.pdf"
     with open(pdf_filename, "wb") as f:
         f.write(pdf_data)
