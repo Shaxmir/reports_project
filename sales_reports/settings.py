@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-j8*jt1^4k^$gkqp&7^*ei)c29j3%#^cv14tjki4n(fddot_q&x
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -82,7 +82,7 @@ DATABASES = {
         'NAME': 'sales_reports',
         'USER': 'soddos',
         'PASSWORD': 'Shax312mir',
-        'HOST': 'localhost',
+        'HOST': '185.255.133.33',
         'PORT': '5432',
     }
 }
@@ -112,7 +112,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 
@@ -137,7 +137,7 @@ LOGGING = {
         'django': {
             'handlers': ['console', 'file'],
             'level': 'DEBUG',
-            'propagate': True,
+            'propagate': False,
         },
         'your_app_name': {  # Замените на имя вашего приложения
             'handlers': ['console', 'file'],
@@ -163,3 +163,9 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 if not BOT_TOKEN:
     raise ValueError("❌ BOT_TOKEN не найден в .env файле!")
+
+
+# Роли
+
+CREATOR_ID = int(os.getenv("CREATOR_ID"))
+ADMIN_IDS = [int(id) for id in os.getenv("ADMIN_IDS").split(",")]

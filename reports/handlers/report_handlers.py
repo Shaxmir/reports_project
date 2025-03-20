@@ -78,7 +78,7 @@ def generate_pdf(sales, expenses, cash_balance, report_date):
 
 async def send_report_text(message: Message):
     async with aiohttp.ClientSession() as session:
-        async with session.get("http://127.0.0.1:8000/api/report/") as resp:
+        async with session.get("http://185.255.133.33:8001/api/report/") as resp:
             data = await resp.json()
             text = f"📊 *Отчет за сегодня:*\n"
             text += f"💰 Продано на {data['total_sales']} руб.\n"

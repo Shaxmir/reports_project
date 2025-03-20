@@ -20,7 +20,7 @@ class SaleState(StatesGroup):
     shipment_date = State()
     comment = State()
 
-API_URL = "http://127.0.0.1:8000/api/"
+API_URL = "http://185.255.133.33:8001/api/"
 
 # Обработчик команды /sale
 async def start_sale(message: Message, state: FSMContext):
