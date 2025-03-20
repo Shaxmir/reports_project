@@ -1,7 +1,7 @@
 # handlers/report_handlers.py
 import os
 import aiohttp
-from datetime import date
+from datetime import date, datetime
 from io import BytesIO
 from aiogram import types
 from aiogram.filters import Command
@@ -20,23 +20,22 @@ from django.utils.timezone import now
 pdfmetrics.registerFont(TTFont('DejaVuSans', 'DejaVuSans.ttf'))
 pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', 'DejaVuSans-Bold.ttf'))
 @sync_to_async
-def get_today_sales():
-    return list(Sale.objects.filter(sale_date=date.today()))
+def get_sales_by_date(date):
+    return list(Sale.objects.filter(sale_date=date))
 
 @sync_to_async
-def get_today_expenses():
-    return list(Expense.objects.filter(date=date.today()))
+def get_expenses_by_date(date):
+    return list(Expense.objects.filter(date=date))
 
 @sync_to_async
-def get_cash_balance():
-    return CashRegister.objects.latest('date').cash_total
+def get_cash_balance_by_date(date):
+    return CashRegister.objects.filter(date=date).latest('date').cash_total
 
-def generate_pdf(sales, expenses, cash_balance):
+def generate_pdf(sales, expenses, cash_balance, report_date):
     buffer = BytesIO()
-    today = now().date()
     c = canvas.Canvas(buffer, pagesize=letter)
     c.setFont("DejaVuSans", 16)
-    c.drawString(100, 750, f"Ежедневный отчет на {today}")
+    c.drawString(100, 750, f"Ежедневный отчет на {report_date}")
     c.setFont("DejaVuSans", 12)
     c.drawString(100, 730, "Продажи:")
     y_position = 710
@@ -110,3 +109,111 @@ async def send_report_pdf(message: Message):
     pdf_file = FSInputFile(pdf_filename, filename=f"Отчет_на_{today}.pdf")
     await message.answer_document(pdf_file, caption="Отчет за сегодняшний день")
     os.remove(pdf_filename)
+
+
+
+###################
+
+
+@sync_to_async
+def get_unique_dates():
+    # Получаем уникальные даты из таблицы Sale
+    sales_dates = Sale.objects.dates('sale_date', 'day').distinct()
+    # Получаем уникальные даты из таблицы Expense
+    expenses_dates = Expense.objects.dates('date', 'day').distinct()
+    # Объединяем и сортируем даты
+    all_dates = sorted(set(sales_dates) | set(expenses_dates), reverse=True)
+    return all_dates
+
+
+# Кнопки пагинации
+
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+async def create_dates_keyboard(page: int = 0, items_per_page: int = 5):
+    """
+    Создает инлайн-клавиатуру с датами и пагинацией.
+    """
+    dates = await get_unique_dates()
+    total_dates = len(dates)
+    total_pages = (total_dates + items_per_page - 1) // items_per_page
+
+    # Ограничиваем страницы
+    if page < 0:
+        page = 0
+    elif page >= total_pages:
+        page = total_pages - 1
+
+    # Получаем даты для текущей страницы
+    start = page * items_per_page
+    end = start + items_per_page
+    current_dates = dates[start:end]
+
+    # Создаем клавиатуру
+    builder = InlineKeyboardBuilder()
+    for date in current_dates:
+        builder.button(text=date.strftime("%Y-%m-%d"), callback_data=f"report_date:{date}")
+
+    # Добавляем кнопки пагинации
+    if page > 0:
+        builder.button(text="⬅️ Назад", callback_data=f"report_page:{page - 1}")
+    if page < total_pages - 1:
+        builder.button(text="Вперед ➡️", callback_data=f"report_page:{page + 1}")
+
+    builder.adjust(1)  # Одна кнопка на строку
+    return builder.as_markup()
+
+
+async def handle_report_by_date(message: Message):
+    keyboard = await create_dates_keyboard()
+    await message.answer("Выберите дату для отчета:", reply_markup=keyboard)
+
+
+
+from aiogram import F
+
+async def handle_report_date_selection(callback: types.CallbackQuery):
+    """
+    Обработчик выбора даты для отчета.
+    """
+    # Извлекаем дату из callback_data
+    date_str = callback.data.split(":")[1]
+    report_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+
+    # Получаем данные за выбранную дату
+    sales = await get_sales_by_date(report_date)
+    expenses = await get_expenses_by_date(report_date)
+    if not sales and not expenses:
+        await callback.answer("❌ Нет данных за выбранную дату.", show_alert=True)
+        return
+
+    # Формируем PDF-отчет
+    cash_balance = await get_cash_balance_by_date(report_date)
+    pdf_data = generate_pdf(sales, expenses, cash_balance, report_date)
+    pdf_filename = f"report_{report_date}.pdf"
+    with open(pdf_filename, "wb") as f:
+        f.write(pdf_data)
+
+    # Отправляем PDF-файл
+    pdf_file = FSInputFile(pdf_filename, filename=f"Отчет_на_{report_date}.pdf")
+    await callback.message.answer_document(pdf_file, caption=f"Отчет за {report_date}")
+    os.remove(pdf_filename)
+
+    # Закрываем уведомление о нажатии кнопки
+    await callback.answer()
+
+
+async def handle_report_pagination(callback: types.CallbackQuery):
+    """
+    Обработчик пагинации для клавиатуры с датами.
+    """
+    # Извлекаем номер страницы из callback_data
+    page = int(callback.data.split(":")[1])
+
+    # Обновляем клавиатуру с новой страницей
+    keyboard = await create_dates_keyboard(page)
+    await callback.message.edit_reply_markup(reply_markup=keyboard)
+
+    # Закрываем уведомление о нажатии кнопки
+    await callback.answer()

@@ -45,6 +45,13 @@ dp.message.register(report_handlers.send_report_text, Command("report"))
 dp.message.register(report_handlers.send_report_pdf, Command("report_pdf"))
 dp.message.register(sale_handlers.get_all_sales, Command("all_sales"))
 
+# Отчеты старые
+dp.message.register(report_handlers.handle_report_by_date, Command("report_by_date"))
+
+# Регистрируем callback-хендлеры для отчетов
+dp.callback_query.register(report_handlers.handle_report_date_selection, F.data.startswith("report_date:"))
+dp.callback_query.register(report_handlers.handle_report_pagination, F.data.startswith("report_page:"))
+
 # Простой стартовый хендлер
 @dp.message(Command("start"))
 async def start_cmd(message: Message):
