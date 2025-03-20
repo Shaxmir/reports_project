@@ -15,6 +15,9 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reports.models import Sale, Expense, CashRegister
 from reportlab.lib.utils import simpleSplit
 from django.utils.timezone import now
+from aiogram import F
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 # Регистрация шрифта для кириллицы
 pdfmetrics.registerFont(TTFont('DejaVuSans', 'DejaVuSans.ttf'))
@@ -30,6 +33,19 @@ def get_expenses_by_date(date):
 @sync_to_async
 def get_cash_balance_by_date(date):
     return CashRegister.objects.filter(date=date).latest('date').cash_total
+
+@sync_to_async
+def get_today_sales():
+    return list(Sale.objects.filter(sale_date=date.today()))
+
+@sync_to_async
+def get_today_expenses():
+    return list(Expense.objects.filter(date=date.today()))
+
+@sync_to_async
+def get_cash_balance():
+    return CashRegister.objects.latest('date').cash_total
+
 
 def generate_pdf(sales, expenses, cash_balance, report_date):
     buffer = BytesIO()
@@ -128,8 +144,7 @@ def get_unique_dates():
 
 # Кнопки пагинации
 
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+
 
 async def create_dates_keyboard(page: int = 0, items_per_page: int = 5):
     """
@@ -171,7 +186,6 @@ async def handle_report_by_date(message: Message):
 
 
 
-from aiogram import F
 
 async def handle_report_date_selection(callback: types.CallbackQuery):
     """

@@ -13,6 +13,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from sales_reports.settings import BOT_TOKEN
+from aiogram import F
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
