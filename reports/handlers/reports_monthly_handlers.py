@@ -52,8 +52,8 @@ async def generate_monthly_report(month: int, year: int):
     styles = getSampleStyleSheet()
     
     # Создаем новый уникальный стиль
-    styles.add(ParagraphStyle(name='CustomTitle', fontName='DejaVuSans-Bold', fontSize=16, alignment=1, leading=100))
-    styles.add(ParagraphStyle(name='Russian', fontName='DejaVuSans', fontSize=12, leading=30))
+    styles.add(ParagraphStyle(name='CustomTitle', fontName='DejaVuSans-Bold', fontSize=16, alignment=1, leading=50, spaceBefore=10,  spaceAfter=10))
+    styles.add(ParagraphStyle(name='Russian', fontName='DejaVuSans', fontSize=12, leading=30, spaceBefore=10,  spaceAfter=10))
 
     elements = []
     month_name = calendar.month_name[month]
