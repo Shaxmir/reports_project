@@ -36,8 +36,8 @@ async def generate_monthly_report(month: int, year: int):
     styles = getSampleStyleSheet()
     
     # Создаем новый уникальный стиль
-    styles.add(ParagraphStyle(name='CustomTitle', fontName='DejaVuSans-Bold', fontSize=16, alignment=1))
-    styles.add(ParagraphStyle(name='Russian', fontName='DejaVuSans', fontSize=12))
+    styles.add(ParagraphStyle(name='CustomTitle', fontName='DejaVuSans-Bold', fontSize=16, alignment=1, leading=14))
+    styles.add(ParagraphStyle(name='Russian', fontName='DejaVuSans', fontSize=12, leading=7))
 
     elements = []
     month_name = calendar.month_name[month]
@@ -74,7 +74,8 @@ async def generate_monthly_report(month: int, year: int):
             f"{day_sales.get('cash', 0):,.0f} руб.",
             f"{day_sales.get('card', 0):,.0f} руб.",
             f"{day_sales.get('invoice', 0):,.0f} руб.",
-            f"{day_expenses:,.0f} руб." if day_expenses else "-"
+            f"{day_expenses:,.0f} руб." if day_expenses else "-",
+            styles['Russian']
         ])
 
     table = Table(data)
