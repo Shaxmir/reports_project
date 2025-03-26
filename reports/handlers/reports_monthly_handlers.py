@@ -13,6 +13,7 @@ from asgiref.sync import sync_to_async
 
 # Подключаем шрифт для поддержки кириллицы
 pdfmetrics.registerFont(TTFont('DejaVuSans', 'DejaVuSans.ttf'))
+pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', 'DejaVuSans-Bold.ttf'))
 # Клавиатура выбора года
 async def create_year_selector():
     keyboard = InlineKeyboardBuilder()
@@ -34,10 +35,13 @@ async def generate_monthly_report(month: int, year: int):
     doc = SimpleDocTemplate(filename, pagesize=letter)
     styles = getSampleStyleSheet()
     styles.add(ParagraphStyle(name='Russian', fontName='DejaVuSans', fontSize=12))
+    styles.add(ParagraphStyle(name='Title', fontName='DejaVuSans-Bold', fontSize=16, alignment=1))
 
     elements = []
     month_name = calendar.month_name[month]
-    elements.append(Paragraph(f"Отчет за {month_name} {year}", styles['Russian']))
+    
+    # Заголовок, по центру и жирным
+    elements.append(Paragraph(f"Отчет за {month_name} {year}", styles['Title']))
 
     sales_data = await get_monthly_sales(month, year)
     expenses_data = await get_monthly_expenses(month, year)
@@ -62,13 +66,13 @@ async def generate_monthly_report(month: int, year: int):
         total_sales['invoice'] += day_sales.get('invoice', 0)
         total_expenses += day_expenses
 
-        data.append([
+        data.append([ 
             day.strftime("%Y-%m-%d"),
-            f"{day_sales.get('total', 0):,} руб.",
-            f"{day_sales.get('cash', 0):,} руб.",
-            f"{day_sales.get('card', 0):,} руб.",
-            f"{day_sales.get('invoice', 0):,} руб.",
-            f"{day_expenses:,} руб." if day_expenses else "-"
+            f"{day_sales.get('total', 0):,.0f} руб.",
+            f"{day_sales.get('cash', 0):,.0f} руб.",
+            f"{day_sales.get('card', 0):,.0f} руб.",
+            f"{day_sales.get('invoice', 0):,.0f} руб.",
+            f"{day_expenses:,.0f} руб." if day_expenses else "-"
         ])
 
     table = Table(data)
@@ -84,12 +88,13 @@ async def generate_monthly_report(month: int, year: int):
     ]))
     elements.append(table)
 
-    elements.append(Paragraph(f"Общая сумма продаж: {total_sales['total']:,} руб.", styles['Russian']))
+    # Общие суммы, красиво отформатированы
+    elements.append(Paragraph(f"Общая сумма продаж: {total_sales['total']:,.0f} руб.", styles['Russian']))
     elements.append(Paragraph(
-        f"Наличными: {total_sales['cash']:,} руб. | Картой: {total_sales['card']:,} руб. | По счету: {total_sales['invoice']:,} руб.",
+        f"Наличными: {total_sales['cash']:,.0f} руб. | Картой: {total_sales['card']:,.0f} руб. | По счету: {total_sales['invoice']:,.0f} руб.",
         styles['Russian']
     ))
-    elements.append(Paragraph(f"Общая сумма расходов: {total_expenses:,} руб.", styles['Russian']))
+    elements.append(Paragraph(f"Общая сумма расходов: {total_expenses:,.0f} руб.", styles['Russian']))
 
     doc.build(elements)
     return filename
