@@ -79,15 +79,20 @@ async def generate_monthly_report(month: int, year: int):
 
     table = Table(data)
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),  # Фон для заголовков
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),  # Цвет текста в заголовках
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),  # Выравнивание текста по центру
         ('FONTNAME', (0, 0), (-1, 0), 'DejaVuSans'),
         ('FONTSIZE', (0, 0), (-1, 0), 12),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),  # Фон для данных
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),  # Толщина и цвет линии сетки
+        ('LINEABOVE', (0, 0), (-1, 0), 2, colors.black),  # Линии над заголовками
+        ('LINEBELOW', (0, 0), (-1, -1), 1, colors.black),  # Линии под таблицей
+        ('LINEBEFORE', (0, 0), (0, -1), 1, colors.black),  # Линии перед первым столбцом
+        ('LINEAFTER', (0, 0), (0, -1), 1, colors.black),  # Линии после последнего столбца
     ]))
+
     elements.append(table)
 
     # Общие суммы, красиво отформатированы
