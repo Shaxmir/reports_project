@@ -92,6 +92,7 @@ async def generate_monthly_report(month: int, year: int):
             f"{day_sales.get('invoice', 0):,.0f} p.",
             f"{day_expenses:,.0f} p." if day_expenses else "-"
         ])
+    y_position = 710
 
     table = Table(data)
     table.setStyle(TableStyle([
