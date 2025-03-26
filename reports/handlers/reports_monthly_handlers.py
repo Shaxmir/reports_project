@@ -42,7 +42,7 @@ async def create_month_selector(year: int):
 
     for i, month in enumerate(calendar.month_name[1:], start=1):
         keyboard.button(text=months_dict[month], callback_data=f"month_{i}_{year}")
-    keyboard.adjust()
+    keyboard.adjust(1)
     return keyboard.as_markup()
 
 # Генерация PDF отчета
@@ -92,7 +92,6 @@ async def generate_monthly_report(month: int, year: int):
             f"{day_sales.get('invoice', 0):,.0f} p.",
             f"{day_expenses:,.0f} p." if day_expenses else "-"
         ])
-    y_position = 710
 
     table = Table(data)
     table.setStyle(TableStyle([
@@ -113,7 +112,6 @@ async def generate_monthly_report(month: int, year: int):
     elements.append(table)
 
     # Общие суммы, красиво отформатированы
-    y_position -= 15
     elements.append(Paragraph(f"Общая сумма продаж: {total_sales['total']:,.0f} руб.", styles['Russian']))
     elements.append(Paragraph(
         f"Наличными: {total_sales['cash']:,.0f} руб. | Картой: {total_sales['card']:,.0f} руб. | По счету: {total_sales['invoice']:,.0f} руб.",
