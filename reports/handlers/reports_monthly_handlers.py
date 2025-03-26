@@ -6,29 +6,24 @@ from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import letter
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import Message, FSInputFile, CallbackQuery
 from asgiref.sync import sync_to_async
 
 # Клавиатура для выбора месяца/года
 async def create_month_selector():
     now = datetime.now()
-    keyboard = InlineKeyboardMarkup(row_width=4)
-    
+    keyboard = InlineKeyboardBuilder()
+
     # Кнопки месяцев
-    months = [
-        InlineKeyboardButton(text=month, callback_data=f"month_{i+1}_{now.year}")
-        for i, month in enumerate(calendar.month_name[1:])
-    ]
-    
+    for i, month in enumerate(calendar.month_name[1:], start=1):
+        keyboard.button(text=month, callback_data=f"month_{i}_{now.year}")
+
     # Кнопки годов (текущий и предыдущий)
-    years = [
-        InlineKeyboardButton(text=str(now.year - 1), callback_data=f"year_{now.year - 1}"),
-        InlineKeyboardButton(text=str(now.year), callback_data=f"year_{now.year}")
-    ]
-    
-    keyboard.add(*months)
-    keyboard.add(*years)
-    return keyboard
+    keyboard.button(text=str(now.year - 1), callback_data=f"year_{now.year - 1}")
+    keyboard.button(text=str(now.year), callback_data=f"year_{now.year}")
+
+    return keyboard.as_markup()
 
 # Генерация PDF отчета
 async def generate_monthly_report(month: int, year: int):
