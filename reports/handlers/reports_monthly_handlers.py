@@ -34,14 +34,16 @@ async def generate_monthly_report(month: int, year: int):
     filename = f"monthly_report_{month}_{year}.pdf"
     doc = SimpleDocTemplate(filename, pagesize=letter)
     styles = getSampleStyleSheet()
+    
+    # Создаем новый уникальный стиль
+    styles.add(ParagraphStyle(name='CustomTitle', fontName='DejaVuSans-Bold', fontSize=16, alignment=1))
     styles.add(ParagraphStyle(name='Russian', fontName='DejaVuSans', fontSize=12))
-    styles.add(ParagraphStyle(name='Title', fontName='DejaVuSans-Bold', fontSize=16, alignment=1))
 
     elements = []
     month_name = calendar.month_name[month]
     
-    # Заголовок, по центру и жирным
-    elements.append(Paragraph(f"Отчет за {month_name} {year}", styles['Title']))
+    # Используем новый стиль для заголовка
+    elements.append(Paragraph(f"Отчет за {month_name} {year}", styles['CustomTitle']))
 
     sales_data = await get_monthly_sales(month, year)
     expenses_data = await get_monthly_expenses(month, year)
