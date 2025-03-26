@@ -105,13 +105,14 @@ async def generate_monthly_report(month: int, year: int):
         ('GRID', (0, 0), (-1, -1), 1, colors.black),  # Толщина и цвет линии сетки
         ('LINEABOVE', (0, 0), (-1, 0), 2, colors.black),  # Линии над заголовками
         ('LINEBELOW', (0, 0), (-1, -1), 1, colors.black),  # Линии под таблицей
-        ('LINEBEFORE', (0, 0), (0, -1), 5, colors.black),  # Линии перед первым столбцом
-        ('LINEAFTER', (0, 0), (0, -1), 5, colors.black),  # Линии после последнего столбца
+        ('LINEBEFORE', (0, 0), (0, -1), 1, colors.black),  # Линии перед первым столбцом
+        ('LINEAFTER', (0, 0), (0, -1), 1, colors.black),  # Линии после последнего столбца
     ]))
 
     elements.append(table)
 
     # Общие суммы, красиво отформатированы
+    y_position -= 15
     elements.append(Paragraph(f"Общая сумма продаж: {total_sales['total']:,.0f} руб.", styles['Russian']))
     elements.append(Paragraph(
         f"Наличными: {total_sales['cash']:,.0f} руб. | Картой: {total_sales['card']:,.0f} руб. | По счету: {total_sales['invoice']:,.0f} руб.",
