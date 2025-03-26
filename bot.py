@@ -19,7 +19,7 @@ bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
 # Импорт обработчиков из пакета handlers
-from reports.handlers import sale_handlers, expense_handlers, cash_handlers, report_handlers, expenses_edit_handlers, sale_edit_handlers
+from reports.handlers import sale_handlers, expense_handlers, cash_handlers, report_handlers, expenses_edit_handlers, sale_edit_handlers, reports_monthly_handlers
 from reports.handlers.expenses_edit_handlers import EditExpenseState
 from reports.filters.role_filters import IsAdmin, IsCreator
 
@@ -75,6 +75,10 @@ dp.message.register(report_handlers.handle_report_by_date, Command("report_by_da
 # Регистрируем callback-хендлеры для отчетов
 dp.callback_query.register(report_handlers.handle_report_date_selection, F.data.startswith("report_date:"))
 dp.callback_query.register(report_handlers.handle_report_pagination, F.data.startswith("report_page:"))
+
+# Отчеты за месяц
+dp.message.register(reports_monthly_handlers.monthly_report_start, Command("monthly_report"))
+dp.callback_query.register(reports_monthly_handlers.handle_month_selection, F.data.startswith("month_"))
 
 # Простой стартовый хендлер
 @dp.message(Command("start"))
