@@ -25,8 +25,24 @@ async def create_year_selector():
 # Клавиатура выбора месяца
 async def create_month_selector(year: int):
     keyboard = InlineKeyboardBuilder()
+    months_dict = {
+    "January": "Январь",
+    "February": "Февраль",
+    "March": "Март",
+    "April": "Апрель",
+    "May": "Май",
+    "June": "Июнь",
+    "July": "Июль",
+    "August": "Август",
+    "September": "Сентябрь",
+    "October": "Октябрь",
+    "November": "Ноябрь",
+    "December": "Декабрь"
+    }
+
     for i, month in enumerate(calendar.month_name[1:], start=1):
-        keyboard.button(text=month, callback_data=f"month_{i}_{year}")
+        keyboard.button(text=months_dict[month], callback_data=f"month_{i}_{year}")
+    keyboard.adjust()
     return keyboard.as_markup()
 
 # Генерация PDF отчета
@@ -89,8 +105,8 @@ async def generate_monthly_report(month: int, year: int):
         ('GRID', (0, 0), (-1, -1), 1, colors.black),  # Толщина и цвет линии сетки
         ('LINEABOVE', (0, 0), (-1, 0), 2, colors.black),  # Линии над заголовками
         ('LINEBELOW', (0, 0), (-1, -1), 1, colors.black),  # Линии под таблицей
-        ('LINEBEFORE', (0, 0), (0, -1), 1, colors.black),  # Линии перед первым столбцом
-        ('LINEAFTER', (0, 0), (0, -1), 1, colors.black),  # Линии после последнего столбца
+        ('LINEBEFORE', (0, 0), (0, -1), 5, colors.black),  # Линии перед первым столбцом
+        ('LINEAFTER', (0, 0), (0, -1), 5, colors.black),  # Линии после последнего столбца
     ]))
 
     elements.append(table)
