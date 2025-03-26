@@ -12,8 +12,7 @@ from aiogram.types import Message, FSInputFile, CallbackQuery
 from asgiref.sync import sync_to_async
 
 # Подключаем шрифт для поддержки кириллицы
-pdfmetrics.registerFont(TTFont('Arial', 'Arial.ttf'))
-
+pdfmetrics.registerFont(TTFont('DejaVuSans', 'DejaVuSans.ttf'))
 # Клавиатура выбора года
 async def create_year_selector():
     keyboard = InlineKeyboardBuilder()
@@ -34,7 +33,7 @@ async def generate_monthly_report(month: int, year: int):
     filename = f"monthly_report_{month}_{year}.pdf"
     doc = SimpleDocTemplate(filename, pagesize=letter)
     styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(name='Russian', fontName='Arial', fontSize=12))
+    styles.add(ParagraphStyle(name='Russian', fontName='DejaVuSans', fontSize=12))
 
     elements = []
     month_name = calendar.month_name[month]
@@ -77,7 +76,7 @@ async def generate_monthly_report(month: int, year: int):
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Arial'),
+        ('FONTNAME', (0, 0), (-1, 0), 'DejaVuSans'),
         ('FONTSIZE', (0, 0), (-1, 0), 12),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
         ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
