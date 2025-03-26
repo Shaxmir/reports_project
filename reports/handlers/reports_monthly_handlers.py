@@ -134,11 +134,13 @@ async def monthly_report_start(message: Message):
 
 async def handle_year_selection(callback: CallbackQuery):
     _, year = callback.data.split('_')
+    print('CallBack year - ',callback.data.split('_'))
     year = int(year)
     await callback.message.edit_text(f"Выбран год {year}. Теперь выберите месяц:", reply_markup=await create_month_selector(year))
 
 async def handle_month_selection(callback: CallbackQuery):
     _, month, year = callback.data.split('_')
+    print('CallBack month - ',callback.data.split('_'))
     month = int(month)
     year = int(year)
 
