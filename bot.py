@@ -78,8 +78,8 @@ dp.callback_query.register(report_handlers.handle_report_pagination, F.data.star
 
 # Отчеты за месяц
 dp.message.register(reports_monthly_handlers.monthly_report_start, Command("monthly_report"))
-dp.callback_query.register(reports_monthly_handlers.handle_year_selection, F.data.startswith("select_year_"))
-dp.callback_query.register(reports_monthly_handlers.handle_month_selection, F.data.startswith("select_month_"))
+dp.callback_query.register(reports_monthly_handlers.handle_year_selection, F.data.startswith("year_"))
+dp.callback_query.register(reports_monthly_handlers.handle_month_selection, F.data.startswith("month_"))
 
 
 # Простой стартовый хендлер

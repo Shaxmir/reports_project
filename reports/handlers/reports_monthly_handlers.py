@@ -18,14 +18,14 @@ async def create_year_selector():
     keyboard = InlineKeyboardBuilder()
     now = datetime.now()
     for year in range(now.year - 1, now.year + 2):  # Добавляем прошлый, текущий и следующий годы
-        keyboard.button(text=str(year), callback_data=f"select_year_{year}")
+        keyboard.button(text=str(year), callback_data=f"year_{year}")
     return keyboard.as_markup()
 
 # Клавиатура выбора месяца
 async def create_month_selector(year: int):
     keyboard = InlineKeyboardBuilder()
     for i, month in enumerate(calendar.month_name[1:], start=1):
-        keyboard.button(text=month, callback_data=f"select_month_{i}_{year}")
+        keyboard.button(text=month, callback_data=f"month_{i}_{year}")
     return keyboard.as_markup()
 
 # Генерация PDF отчета
