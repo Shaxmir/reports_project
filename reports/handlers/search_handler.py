@@ -15,18 +15,18 @@ class SearchStates(StatesGroup):
 async def get_sales_by_date_range(start_date, end_date):
     async with AsyncSession() as session:
         result = await session.execute(
-            select(Sale).where(Sale.date >= start_date, Sale.date <= end_date)
+            select(Sale.date, Sale.amount, Sale.item).where(Sale.date >= start_date, Sale.date <= end_date)
         )
-        sales = result.scalars().all()
-        return [{"date": s.date, "amount": s.amount, "item": s.item} for s in sales]
+        sales = result.fetchall()
+        return [{"date": s[0], "amount": s[1], "item": s[2]} for s in sales]
 
 async def get_expenses_by_date_range(start_date, end_date):
     async with AsyncSession() as session:
         result = await session.execute(
-            select(Expense).where(Expense.date >= start_date, Expense.date <= end_date)
+            select(Expense.date, Expense.amount, Expense.category).where(Expense.date >= start_date, Expense.date <= end_date)
         )
-        expenses = result.scalars().all()
-        return [{"date": e.date, "amount": e.amount, "category": e.category} for e in expenses]
+        expenses = result.fetchall()
+        return [{"date": e[0], "amount": e[1], "category": e[2]} for e in expenses]
 
 # Хендлер для команды /search
 async def search_prompt(message: Message, state: FSMContext):
