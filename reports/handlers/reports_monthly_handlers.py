@@ -14,7 +14,6 @@ from asgiref.sync import sync_to_async
 import matplotlib
 matplotlib.use('Agg')  # Используем бэкенд без графического интерфейса
 import matplotlib.pyplot as plt
-import datetime
 import io
 from aiogram.types import InputFile
 # Подключаем шрифт для поддержки кириллицы
