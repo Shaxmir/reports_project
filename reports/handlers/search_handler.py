@@ -2,21 +2,23 @@ from aiogram import Dispatcher
 from aiogram.types import Message
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from asgiref.sync import sync_to_async
 from datetime import datetime
 from reports.models import Sale, Expense
 from aiogram.fsm.state import StatesGroup, State
+from asgiref.sync import sync_to_async
 
 class SearchStates(StatesGroup):
     waiting_for_date = State()  # Ожидание даты или диапазона дат
 
-# Функции для получения данных через Django ORM
-async def get_sales_by_date_range(start_date, end_date):
-    sales = await sync_to_async(Sale.objects.filter)(sale_date__gte=start_date, sale_date__lte=end_date)
+# Функции для получения данных через Django ORM с использованием sync_to_async
+@sync_to_async
+def get_sales_by_date_range(start_date, end_date):
+    sales = Sale.objects.filter(sale_date__gte=start_date, sale_date__lte=end_date)
     return [{"date": sale.sale_date, "amount": sale.total_price, "item": sale.name} for sale in sales]
 
-async def get_expenses_by_date_range(start_date, end_date):
-    expenses = await sync_to_async(Expense.objects.filter)(date__gte=start_date, date__lte=end_date)
+@sync_to_async
+def get_expenses_by_date_range(start_date, end_date):
+    expenses = Expense.objects.filter(date__gte=start_date, date__lte=end_date)
     return [{"date": expense.date, "amount": expense.amount, "category": expense.reason} for expense in expenses]
 
 # Хендлер для команды /search
