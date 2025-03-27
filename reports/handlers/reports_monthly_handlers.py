@@ -217,7 +217,7 @@ async def handle_month_selection(callback: CallbackQuery):
         file = FSInputFile(filename)
         await callback.message.answer_document(file, caption=f"Отчет за {calendar.month_name[month]} {year}")
         os.remove(filename)
-        await callback.message.answer_photo(photo=InputFile(image, filename=f"chart_{month}_{year}.png"),
+        await callback.message.answer_photo(photo=FSInputFile(image, filename=f"chart_{month}_{year}.png"),
                                         caption=f"График продаж и расходов за {month}.{year}")
     except Exception as e:
         await callback.message.answer(f"Ошибка при формировании отчета: {str(e)}")
