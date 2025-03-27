@@ -2,32 +2,22 @@ from aiogram import Dispatcher
 from aiogram.types import Message
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
+from asgiref.sync import sync_to_async
 from datetime import datetime
 from reports.models import Sale, Expense
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 from aiogram.fsm.state import StatesGroup, State
 
 class SearchStates(StatesGroup):
     waiting_for_date = State()  # Ожидание даты или диапазона дат
 
-# Функции для получения данных
+# Функции для получения данных через Django ORM
 async def get_sales_by_date_range(start_date, end_date):
-    async with AsyncSession() as session:
-        result = await session.execute(
-            select(Sale.sale_date, Sale.total_price, Sale.name).where(Sale.sale_date >= start_date, Sale.sale_date <= end_date)
-        )
-        sales = result.fetchall()
-        return [{"date": s[0], "amount": s[1], "item": s[2]} for s in sales]
+    sales = await sync_to_async(Sale.objects.filter)(sale_date__gte=start_date, sale_date__lte=end_date)
+    return [{"date": sale.sale_date, "amount": sale.total_price, "item": sale.name} for sale in sales]
 
 async def get_expenses_by_date_range(start_date, end_date):
-    async with AsyncSession() as session:
-        result = await session.execute(
-            select(Expense.date, Expense.amount, Expense.reason).where(Expense.date >= start_date, Expense.date <= end_date)
-        )
-        expenses = result.fetchall()
-        return [{"date": e[0], "amount": e[1], "category": e[2]} for e in expenses]
-
+    expenses = await sync_to_async(Expense.objects.filter)(date__gte=start_date, date__lte=end_date)
+    return [{"date": expense.date, "amount": expense.amount, "category": expense.reason} for expense in expenses]
 
 # Хендлер для команды /search
 async def search_prompt(message: Message, state: FSMContext):
@@ -51,9 +41,11 @@ async def process_search_query(message: Message, state: FSMContext):
         else:
             start_date = end_date = datetime.strptime(query, "%Y-%m-%d").date()
 
+        # Получаем данные по продажам и расходам
         sales = await get_sales_by_date_range(start_date, end_date)
         expenses = await get_expenses_by_date_range(start_date, end_date)
 
+        # Формируем ответ
         if not sales and not expenses:
             await message.answer("За указанный период данных нет.")
             return
@@ -63,12 +55,12 @@ async def process_search_query(message: Message, state: FSMContext):
         if sales:
             response += "💰 *Продажи:*\n"
             for sale in sales:
-                response += f"- {sale['date']}: {sale['amount']} руб. ({sale['item']})\n"
+                response += f"- {sale['date']} | {sale['amount']} руб. | {sale['item']}\n"
 
         if expenses:
             response += "\n💸 *Расходы:*\n"
             for expense in expenses:
-                response += f"- {expense['date']}: {expense['amount']} руб. ({expense['category']})\n"
+                response += f"- {expense['date']} | {expense['amount']} руб. | {expense['category']}\n"
 
         await message.answer(response, parse_mode="Markdown")
 
