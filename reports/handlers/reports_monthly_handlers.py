@@ -52,7 +52,7 @@ async def create_month_selector(year: int):
 
 
 # Генерация отчета в графиках
-async def generate_sales_expense_chart(month: int, year: int):
+async def generate_sales_expense_chart(month: int, year: int) -> str:
     # Получаем данные за месяц
     sales_data = await get_monthly_sales(month, year)
     expenses_data = await get_monthly_expenses(month, year)
@@ -72,13 +72,12 @@ async def generate_sales_expense_chart(month: int, year: int):
     plt.legend()
     plt.xticks(rotation=45)
 
-    # Сохраняем в буфер
-    buf = io.BytesIO()
-    plt.savefig(buf, format="png")
-    buf.seek(0)
+    # Сохраняем на диск
+    filename = f"chart_{month}_{year}.png"
+    plt.savefig(filename, format="png")
     plt.close()
 
-    return buf
+    return filename  # возвращаем путь к файлу
 
 
 
@@ -216,8 +215,12 @@ async def handle_month_selection(callback: CallbackQuery):
         filename = await generate_monthly_report(month, year)
         file = FSInputFile(filename)
         await callback.message.answer_document(file, caption=f"Отчет за {calendar.month_name[month]} {year}")
-        os.remove(filename)
-        await callback.message.answer_photo(photo=FSInputFile(image, filename=f"chart_{month}_{year}.png"),
-                                        caption=f"График продаж и расходов за {month}.{year}")
+        os.remove(filename)  # Удаляем PDF
+
+        image_path = await generate_sales_expense_chart(month, year)
+        await callback.message.answer_photo(photo=FSInputFile(image_path),
+                                            caption=f"График продаж и расходов за {month}.{year}")
+        os.remove(image_path)  # Удаляем PNG после отправки
     except Exception as e:
         await callback.message.answer(f"Ошибка при формировании отчета: {str(e)}")
+
