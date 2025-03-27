@@ -88,7 +88,7 @@ dp.callback_query.register(reports_monthly_handlers.handle_month_selection, F.da
 
 # Регистрируем хендлеры для поиска
 dp.message.register(search_handler.search_prompt, Command("search"))
-dp.message.register(search_handler.process_search_query, state=SearchStates.waiting_for_date)
+dp.message.register(search_handler.process_search_query, search_handler.SearchStates.waiting_for_date)
 # Простой стартовый хендлер
 @dp.message(Command("start"))
 async def start_cmd(message: Message):
