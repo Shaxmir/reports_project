@@ -11,6 +11,12 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import Message, FSInputFile, CallbackQuery
 from asgiref.sync import sync_to_async
 
+import matplotlib
+matplotlib.use('Agg')  # Используем бэкенд без графического интерфейса
+import matplotlib.pyplot as plt
+import datetime
+import io
+from aiogram.types import InputFile
 # Подключаем шрифт для поддержки кириллицы
 pdfmetrics.registerFont(TTFont('DejaVuSans', 'DejaVuSans.ttf'))
 pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', 'DejaVuSans-Bold.ttf'))
@@ -44,6 +50,39 @@ async def create_month_selector(year: int):
         keyboard.button(text=months_dict[month], callback_data=f"month_{i}_{year}")
     keyboard.adjust(1)
     return keyboard.as_markup()
+
+
+# Генерация отчета в графиках
+async def generate_sales_expense_chart(month: int, year: int):
+    # Получаем данные за месяц
+    sales_data = await get_monthly_sales(month, year)
+    expenses_data = await get_monthly_expenses(month, year)
+
+    dates = sorted(set(sales_data.keys()) | set(expenses_data.keys()))
+    sales = [sales_data.get(date, {}).get("total", 0) for date in dates]
+    expenses = [expenses_data.get(date, 0) for date in dates]
+
+    # Строим график
+    plt.figure(figsize=(10, 5))
+    plt.plot(dates, sales, label="Продажи", marker="o", linestyle="-", color="blue")
+    plt.plot(dates, expenses, label="Расходы", marker="s", linestyle="--", color="red")
+
+    plt.xlabel("Дата")
+    plt.ylabel("Сумма (руб)")
+    plt.title(f"Продажи и расходы за {month}.{year}")
+    plt.legend()
+    plt.xticks(rotation=45)
+
+    # Сохраняем в буфер
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png")
+    buf.seek(0)
+    plt.close()
+
+    return buf
+
+
+
 
 # Генерация PDF отчета
 async def generate_monthly_report(month: int, year: int):
@@ -173,11 +212,13 @@ async def handle_month_selection(callback: CallbackQuery):
     year = int(year)
 
     await callback.answer(f"Формируем отчет за {calendar.month_name[month]} {year}...")
-
+    image = await generate_sales_expense_chart(month, year) # генерируем отчет в графиках
     try:
         filename = await generate_monthly_report(month, year)
         file = FSInputFile(filename)
         await callback.message.answer_document(file, caption=f"Отчет за {calendar.month_name[month]} {year}")
         os.remove(filename)
+        await callback.message.answer_photo(photo=InputFile(image, filename=f"chart_{month}_{year}.png"),
+                                        caption=f"График продаж и расходов за {month}.{year}")
     except Exception as e:
         await callback.message.answer(f"Ошибка при формировании отчета: {str(e)}")
