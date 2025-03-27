@@ -21,6 +21,7 @@ dp = Dispatcher()
 # Импорт обработчиков из пакета handlers
 from reports.handlers import sale_handlers, expense_handlers, cash_handlers, report_handlers, expenses_edit_handlers, sale_edit_handlers, reports_monthly_handlers, search_handler
 from reports.handlers.expenses_edit_handlers import EditExpenseState
+from reports.handlers.search_handler import SearchStates
 from reports.filters.role_filters import IsAdmin, IsCreator
 
 # Регистрируем хендлеры для продажи
@@ -69,9 +70,7 @@ dp.message.register(report_handlers.send_report_text, Command("report"))
 dp.message.register(report_handlers.send_report_pdf, Command("report_pdf"))
 dp.message.register(sale_handlers.get_all_sales, Command("all_sales"))
 
-# Регистрируем хендлеры для поиска
-dp.message.register(search_handler.search_prompt, Command("search"))
-dp.message.register(search_handler.process_search_query, F.text)
+
 
 
 # Отчеты старые
@@ -87,6 +86,9 @@ dp.callback_query.register(reports_monthly_handlers.handle_year_selection, F.dat
 dp.callback_query.register(reports_monthly_handlers.handle_month_selection, F.data.startswith("month_"))
 
 
+# Регистрируем хендлеры для поиска
+dp.message.register(search_handler.search_prompt, Command("search"))
+dp.message.register(search_handler.process_search_query, state=SearchStates.waiting_for_date)
 # Простой стартовый хендлер
 @dp.message(Command("start"))
 async def start_cmd(message: Message):
