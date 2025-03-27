@@ -102,9 +102,8 @@ async def generate_monthly_report(month: int, year: int):
     expenses_data = await get_monthly_expenses(month, year)
 
     if not sales_data and not expenses_data:
-        elements.append(Paragraph("В этом месяце не было продаж или расходов.", styles['Russian']))
-        doc.build(elements)
-        return filename
+        return None  # Возвращаем None вместо создания PDF
+
 
     # Формируем таблицу
     data = [["Дата", "Общая сумма", "Наличные", "Карта", "Счет", "Расходы"]]
@@ -213,6 +212,9 @@ async def handle_month_selection(callback: CallbackQuery):
     image = await generate_sales_expense_chart(month, year) # генерируем отчет в графиках
     try:
         filename = await generate_monthly_report(month, year)
+        if filename is None:
+            await callback.message.answer(f"В этом месяце не было продаж или расходов.")
+            return
         file = FSInputFile(filename)
         await callback.message.answer_document(file, caption=f"Отчет за {calendar.month_name[month]} {year}")
         os.remove(filename)  # Удаляем PDF
