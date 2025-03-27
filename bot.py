@@ -19,7 +19,7 @@ bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
 # Импорт обработчиков из пакета handlers
-from reports.handlers import sale_handlers, expense_handlers, cash_handlers, report_handlers, expenses_edit_handlers, sale_edit_handlers, reports_monthly_handlers
+from reports.handlers import sale_handlers, expense_handlers, cash_handlers, report_handlers, expenses_edit_handlers, sale_edit_handlers, reports_monthly_handlers, search_handler
 from reports.handlers.expenses_edit_handlers import EditExpenseState
 from reports.filters.role_filters import IsAdmin, IsCreator
 
@@ -68,6 +68,11 @@ dp.message.register(cash_handlers.process_cash, cash_handlers.CashState.amount)
 dp.message.register(report_handlers.send_report_text, Command("report"))
 dp.message.register(report_handlers.send_report_pdf, Command("report_pdf"))
 dp.message.register(sale_handlers.get_all_sales, Command("all_sales"))
+
+# Регистрируем хендлеры для поиска
+dp.message.register(search_handler.search_prompt, Command("search"))
+dp.message.register(search_handler.process_search_query, F.text)
+
 
 # Отчеты старые
 dp.message.register(report_handlers.handle_report_by_date, Command("report_by_date"))
