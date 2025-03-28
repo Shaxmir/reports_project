@@ -11,14 +11,10 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from asgiref.sync import sync_to_async
 
-
-
 class SearchSaleState(StatesGroup):
     keywords = State()
     period_choice = State()
     date_range = State()
-
-
 
 def generate_pdf_report(sales, start_date=None, end_date=None):
     buffer = BytesIO()
@@ -50,23 +46,23 @@ def generate_pdf_report(sales, start_date=None, end_date=None):
     buffer.seek(0)
     return buffer.getvalue()
 
-
 @sync_to_async
 def get_sales(query, start_date=None, end_date=None):
     if start_date and end_date:
         return Sale.objects.filter(name__icontains=query, sale_date__range=(start_date, end_date))
     return Sale.objects.filter(name__icontains=query)
 
+@sync_to_async
+def check_sales_exist(sales):
+    return sales.exists()
 
-# Хендлер для команды /search_sale
 async def search_sale_handler(message: types.Message, state: FSMContext):
     await message.answer("Введите ключевые слова для поиска товаров:")
-    await state.set_state(SearchSaleState.keywords)  # Сохраняем состояние
+    await state.set_state(SearchSaleState.keywords)
 
-# Хендлер для обработки ключевых слов
 async def process_search_keywords(message: types.Message, state: FSMContext):
     query = message.text.strip()
-    await state.update_data(query=query)  # Сохраняем введенные ключевые слова
+    await state.update_data(query=query)
 
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
@@ -75,26 +71,25 @@ async def process_search_keywords(message: types.Message, state: FSMContext):
         ]
     )
     await message.answer("Выберите период:", reply_markup=keyboard)
-    await state.set_state(SearchSaleState.period_choice)  # Переходим к выбору периода
+    await state.set_state(SearchSaleState.period_choice)
 
-# Хендлер для выбора периода
 async def process_search_period(callback: types.CallbackQuery, state: FSMContext):
     action = callback.data
     user_data = await state.get_data()
     query = user_data.get('query')
 
     if action == "search_all":
-        sales = await get_sales(query)  # Используем асинхронный запрос
-        if not sales.exists():
+        sales = await get_sales(query)
+        sales_exist = await check_sales_exist(sales)  # Используем асинхронную проверку
+        if not sales_exist:
             await callback.message.answer("Продажи с такими параметрами не найдены.")
             return
         pdf_data = generate_pdf_report(sales)
         await callback.message.answer_document(BufferedInputFile(pdf_data, filename="sales_report.pdf"))
     elif action == "search_period":
         await callback.message.answer("Введите период в формате YYYY-MM-DD - YYYY-MM-DD")
-        await state.set_state(SearchSaleState.date_range)  # Переход к вводу дат
+        await state.set_state(SearchSaleState.date_range)
 
-# Хендлер для обработки ввода даты
 async def process_search_date_range(message: types.Message, state: FSMContext):
     try:
         period = message.text.strip()
@@ -108,12 +103,13 @@ async def process_search_date_range(message: types.Message, state: FSMContext):
     user_data = await state.get_data()
     query = user_data.get('query')
 
-    sales = await get_sales(query, start_date, end_date)  # Асинхронно получаем продажи
+    sales = await get_sales(query, start_date, end_date)
+    sales_exist = await check_sales_exist(sales)  # Используем асинхронную проверку
 
-    if not sales.exists():
+    if not sales_exist:
         await message.answer("Продажи с такими параметрами за указанный период не найдены.")
         return
 
     pdf_data = generate_pdf_report(sales, start_date, end_date)
     await message.answer_document(BufferedInputFile(pdf_data, filename="sales_report.pdf"))
-    await state.finish()  # Завершаем состояние
+    await state.finish()
