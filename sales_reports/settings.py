@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -122,26 +123,26 @@ USE_TZ = True
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'utf8_formatter': {
+            '()': 'django.utils.log.ServerFormatter',
+            'format': '[{server_time}] {message}',
+            'style': '{',
+            'encoding': 'utf-8',  # Важно: указываем кодировку
+        },
+    },
     'handlers': {
         'console': {
-            'level': 'DEBUG',  # Уровень логирования (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-            'class': 'logging.StreamHandler',  # Вывод в консоль
-        },
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',  # Вывод в файл
-            'filename': os.path.join(BASE_DIR, 'debug.log'),  # Путь к файлу логов
+            'class': 'logging.StreamHandler',
+            'formatter': 'utf8_formatter',
+            'stream': sys.stdout,  # Используем stdout с поддержкой UTF-8
         },
     },
     'loggers': {
-        'django': {
-            'handlers': ['console', 'file'],
+        'django.db.backends': {
+            'handlers': ['console'],
             'level': 'DEBUG',
             'propagate': False,
-        },
-        'your_app_name': {  # Замените на имя вашего приложения
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
         },
     },
 }
