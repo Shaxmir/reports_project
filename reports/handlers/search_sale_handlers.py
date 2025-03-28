@@ -10,6 +10,7 @@ from io import BytesIO
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 
+
 class SearchSaleState(StatesGroup):
     keywords = State()
     period_choice = State()
@@ -47,13 +48,11 @@ def generate_pdf_report(sales, start_date=None, end_date=None):
     return buffer.getvalue()
 
 
-
-
-
 # Хендлер для команды /search_sale
-async def search_sale_handler(message: types.Message):
+async def search_sale_handler(message: types.Message, state: FSMContext):
     await message.answer("Введите ключевые слова для поиска товаров:")
-    await SearchSaleState.keywords.set()  # Сохраняем состояние
+    await state.set_state(SearchSaleState.keywords)  # Сохраняем состояние
+
 
 # Хендлер для обработки ключевых слов
 async def process_search_keywords(message: types.Message, state: FSMContext):
@@ -67,7 +66,8 @@ async def process_search_keywords(message: types.Message, state: FSMContext):
         ]
     )
     await message.answer("Выберите период:", reply_markup=keyboard)
-    await SearchSaleState.period_choice.set()  # Переходим к выбору периода
+    await state.set_state(SearchSaleState.period_choice)  # Переходим к выбору периода
+
 
 # Хендлер для выбора периода
 async def process_search_period(callback: types.CallbackQuery, state: FSMContext):
@@ -84,7 +84,8 @@ async def process_search_period(callback: types.CallbackQuery, state: FSMContext
         await callback.message.answer_document(BufferedInputFile(pdf_data, filename="sales_report.pdf"))
     elif action == "search_period":
         await callback.message.answer("Введите период в формате YYYY-MM-DD - YYYY-MM-DD")
-        await SearchSaleState.date_range.set()  # Переход к вводу дат
+        await state.set_state(SearchSaleState.date_range)  # Переход к вводу дат
+
 
 # Хендлер для обработки ввода даты
 async def process_search_date_range(message: types.Message, state: FSMContext):
