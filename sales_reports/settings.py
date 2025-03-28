@@ -122,10 +122,27 @@ USE_TZ = True
 
 LOGGING = {
     'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',  # Уровень логирования (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+            'class': 'logging.StreamHandler',  # Вывод в консоль
+        },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',  # Вывод в файл
+            'filename': os.path.join(BASE_DIR, 'debug.log'),  # Путь к файлу логов
+        },
+    },
     'loggers': {
-        'django.db.backends': {
-            'level': 'INFO',  # Отключаем DEBUG-логи
-            'handlers': ['console'],
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'your_app_name': {  # Замените на имя вашего приложения
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
         },
     },
 }
