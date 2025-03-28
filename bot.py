@@ -87,8 +87,8 @@ dp.callback_query.register(reports_monthly_handlers.handle_month_selection, F.da
 dp.message.register(search_handler.search_prompt, Command("search"))
 dp.message.register(search_handler.process_search_query, search_handler.SearchStates.waiting_for_date)
 
-# Хендлеры поиска по товарам
-dp.message.register(search_sale_handlers.search_sale, Command("search_sale"))
+# Регистрация хендлеров поиска по товарам
+dp.message.register(search_sale_handlers.search_sale_handler, Command("search_sale"))
 dp.message.register(search_sale_handlers.process_search_keywords, search_sale_handlers.SearchSaleState.keywords)
 dp.message.register(search_sale_handlers.process_search_period, search_sale_handlers.SearchSaleState.period_choice)
 dp.message.register(search_sale_handlers.process_search_date_range, search_sale_handlers.SearchSaleState.date_range)
