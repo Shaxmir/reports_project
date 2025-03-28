@@ -9,9 +9,10 @@ import asyncio
 from io import BytesIO
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-from aiogram.contrib.middlewares.fsm import FSMContext
 from functools import reduce
-from aiogram.fsm.state import StatesGroup, State
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
+
 
 
 
