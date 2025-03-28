@@ -1,26 +1,18 @@
 from aiogram import types
-from aiogram.filters import Command
-from aiogram.utils.markdown import hbold
+from aiogram.dispatcher import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from django.db.models import Q
-from reports.models import Sale
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State
+from aiogram.fsm.filters import Command
+from aiogram.types import BufferedInputFile
 from datetime import datetime
-import asyncio
+from reports.models import Sale
+
 from io import BytesIO
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-from functools import reduce
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
+from datetime import datetime
 
-
-
-
-# Определение состояний FSM
-class SearchState(StatesGroup):
-    query = State()  # Состояние для хранения запроса пользователя
-    start_date = State()  # Состояние для хранения даты начала
-    end_date = State()  # Состояние для хранения даты конца
 
 
 def generate_pdf_report(sales, start_date=None, end_date=None):
@@ -54,54 +46,50 @@ def generate_pdf_report(sales, start_date=None, end_date=None):
     return buffer.getvalue()
 
 
+
+class SearchSaleState(State):
+    keywords = State()  # Для ввода ключевых слов
+    period_choice = State()  # Выбор периода
+    date_range = State()  # Даты для периода
+
+# Хендлер для команды /search_sale
 async def search_sale_handler(message: types.Message):
-    await message.answer("Введите ключевые слова для поиска фанеры (например, '12мм F/W'):")
-    await asyncio.sleep(1)  # Подождем ввода
+    await message.answer("Введите ключевые слова для поиска товаров:")
+    await SearchSaleState.keywords.set()  # Сохраняем состояние
 
-
-async def process_search_query(message: types.Message, state: FSMContext):
+# Хендлер для обработки ключевых слов
+async def process_search_keywords(message: types.Message, state: FSMContext):
     query = message.text.strip()
-    words = query.lower().split()
-
-    if len(words) < 1:
-        await message.answer("Пожалуйста, введите хотя бы одно ключевое слово для поиска.")
-        return
-
-    # Сохраняем ключевые слова в состоянии
-    await state.update_data(query=query)
+    await state.update_data(query=query)  # Сохраняем введенные ключевые слова
 
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="За все время", callback_data=f"search_all:{query}")],
-            [InlineKeyboardButton(text="За определенный период", callback_data=f"search_period:{query}")]
+            [InlineKeyboardButton(text="За все время", callback_data="search_all")],
+            [InlineKeyboardButton(text="За определенный период", callback_data="search_period")]
         ]
     )
-
     await message.answer("Выберите период:", reply_markup=keyboard)
+    await SearchSaleState.period_choice.set()  # Переходим к выбору периода
 
-
-async def process_search_callback(callback: types.CallbackQuery, state: FSMContext):
-    action, query = callback.data.split(":", 1)
-    words = query.lower().split()
+# Хендлер для выбора периода
+async def process_search_period(callback: types.CallbackQuery, state: FSMContext):
+    action = callback.data
+    user_data = await state.get_data()
+    query = user_data.get('query')
 
     if action == "search_all":
-        # Фильтрация с использованием всех ключевых слов
-        sales = Sale.objects.filter(
-            reduce(lambda q, word: q & Q(name__icontains=word), [Q()] + [Q(name__icontains=word) for word in words])
-        )
-
+        sales = Sale.objects.filter(name__icontains=query)
         if not sales.exists():
             await callback.message.answer("Продажи с такими параметрами не найдены.")
             return
-
         pdf_data = generate_pdf_report(sales)
-        await callback.message.answer_document(types.BufferedInputFile(pdf_data, filename="sales_report.pdf"))
-
+        await callback.message.answer_document(BufferedInputFile(pdf_data, filename="sales_report.pdf"))
     elif action == "search_period":
         await callback.message.answer("Введите период в формате YYYY-MM-DD - YYYY-MM-DD")
+        await SearchSaleState.date_range.set()  # Переход к вводу дат
 
-
-async def process_period_input(message: types.Message, state: FSMContext):
+# Хендлер для обработки ввода даты
+async def process_search_date_range(message: types.Message, state: FSMContext):
     try:
         period = message.text.strip()
         start_date, end_date = map(str.strip, period.split("-"))
@@ -111,25 +99,11 @@ async def process_period_input(message: types.Message, state: FSMContext):
         await message.answer("Некорректный формат. Введите даты в формате YYYY-MM-DD - YYYY-MM-DD")
         return
 
-    await message.answer("Теперь введите ключевые слова для поиска фанеры:")
-    # Сохраняем временные данные о периоде в состоянии
-    await message.answer("Введите ключевые слова для поиска фанеры:")
-    await state.update_data(start_date=start_date, end_date=end_date)
-
-
-async def process_period_search(message: types.Message, state: FSMContext):
     user_data = await state.get_data()
-    if 'start_date' not in user_data or 'end_date' not in user_data:
-        await message.answer("Сначала введите период поиска.")
-        return
+    query = user_data.get('query')
 
-    start_date, end_date = user_data['start_date'], user_data['end_date']
-    query = message.text.strip()
-    words = query.lower().split()
-
-    # Фильтрация с использованием всех ключевых слов и указанного периода
     sales = Sale.objects.filter(
-        reduce(lambda q, word: q & Q(name__icontains=word), [Q()] + [Q(name__icontains=word) for word in words]),
+        name__icontains=query,
         sale_date__range=(start_date, end_date)
     )
 
@@ -138,4 +112,5 @@ async def process_period_search(message: types.Message, state: FSMContext):
         return
 
     pdf_data = generate_pdf_report(sales, start_date, end_date)
-    await message.answer_document(types.BufferedInputFile(pdf_data, filename="sales_report.pdf"))
+    await message.answer_document(BufferedInputFile(pdf_data, filename="sales_report.pdf"))
+    await state.finish()  # Завершаем состояние
