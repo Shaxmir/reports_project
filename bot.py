@@ -19,7 +19,7 @@ bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
 # Импорт обработчиков из пакета handlers
-from reports.handlers import sale_handlers, expense_handlers, cash_handlers, report_handlers, expenses_edit_handlers, sale_edit_handlers, reports_monthly_handlers, search_handler
+from reports.handlers import sale_handlers, expense_handlers, cash_handlers, report_handlers, expenses_edit_handlers, sale_edit_handlers, reports_monthly_handlers, search_handler, search_sale_handlers
 from reports.handlers.expenses_edit_handlers import EditExpenseState
 from reports.handlers.search_handler import SearchStates
 from reports.filters.role_filters import IsAdmin, IsCreator
@@ -70,9 +70,6 @@ dp.message.register(report_handlers.send_report_text, Command("report"))
 dp.message.register(report_handlers.send_report_pdf, Command("report_pdf"))
 dp.message.register(sale_handlers.get_all_sales, Command("all_sales"))
 
-
-
-
 # Отчеты старые
 dp.message.register(report_handlers.handle_report_by_date, Command("report_by_date"))
 
@@ -89,6 +86,13 @@ dp.callback_query.register(reports_monthly_handlers.handle_month_selection, F.da
 # Регистрируем хендлеры для поиска
 dp.message.register(search_handler.search_prompt, Command("search"))
 dp.message.register(search_handler.process_search_query, search_handler.SearchStates.waiting_for_date)
+
+# Хендлеры поиска по товарам
+dp.message.register(search_sale_handlers.search_sale, Command("search_sale"))
+dp.message.register(search_sale_handlers.process_search_keywords, search_sale_handlers.SearchSaleState.keywords)
+dp.message.register(search_sale_handlers.process_search_period, search_sale_handlers.SearchSaleState.period_choice)
+dp.message.register(search_sale_handlers.process_search_date_range, search_sale_handlers.SearchSaleState.date_range)
+
 # Простой стартовый хендлер
 @dp.message(Command("start"))
 async def start_cmd(message: Message):
