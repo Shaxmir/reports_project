@@ -122,27 +122,10 @@ USE_TZ = True
 
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'utf8_formatter': {
-            '()': 'django.utils.log.ServerFormatter',
-            'format': '[{server_time}] {message}',
-            'style': '{',
-            'encoding': 'utf-8',  # Важно: указываем кодировку
-        },
-    },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'utf8_formatter',
-            'stream': sys.stdout,  # Используем stdout с поддержкой UTF-8
-        },
-    },
     'loggers': {
         'django.db.backends': {
+            'level': 'INFO',  # Отключаем DEBUG-логи
             'handlers': ['console'],
-            'level': 'DEBUG',
-            'propagate': False,
         },
     },
 }
