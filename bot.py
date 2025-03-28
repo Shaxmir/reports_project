@@ -90,8 +90,9 @@ dp.message.register(search_handler.process_search_query, search_handler.SearchSt
 # Регистрация хендлеров поиска по товарам
 dp.message.register(search_sale_handlers.search_sale_handler, Command("search_sale"))
 dp.message.register(search_sale_handlers.process_search_keywords, search_sale_handlers.SearchSaleState.keywords)
-dp.callback_query.register(search_sale_handlers.process_search_period,  F.data.startswith("search_all"))
-dp.callback_query.register(search_sale_handlers.process_search_date_range,  F.data.startswith("search_period"))
+dp.callback_query.register(search_sale_handlers.process_search_period, search_sale_handlers.SearchSaleState.period_choice)
+dp.message.register(search_sale_handlers.process_search_date_range, search_sale_handlers.SearchSaleState.date_range)
+
 
 # Простой стартовый хендлер
 @dp.message(Command("start"))

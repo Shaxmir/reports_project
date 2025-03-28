@@ -1,7 +1,7 @@
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, BufferedInputFile
-from aiogram.filters import Command
+from aiogram.filters import Command, Text
 from aiogram.fsm.state import State, StatesGroup
 from datetime import datetime
 from reports.models import Sale
@@ -9,12 +9,15 @@ from reports.models import Sale
 from io import BytesIO
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
+from asgiref.sync import sync_to_async
+
 
 
 class SearchSaleState(StatesGroup):
     keywords = State()
     period_choice = State()
     date_range = State()
+
 
 
 def generate_pdf_report(sales, start_date=None, end_date=None):
@@ -48,11 +51,17 @@ def generate_pdf_report(sales, start_date=None, end_date=None):
     return buffer.getvalue()
 
 
+@sync_to_async
+def get_sales(query, start_date=None, end_date=None):
+    if start_date and end_date:
+        return Sale.objects.filter(name__icontains=query, sale_date__range=(start_date, end_date))
+    return Sale.objects.filter(name__icontains=query)
+
+
 # Хендлер для команды /search_sale
 async def search_sale_handler(message: types.Message, state: FSMContext):
     await message.answer("Введите ключевые слова для поиска товаров:")
     await state.set_state(SearchSaleState.keywords)  # Сохраняем состояние
-
 
 # Хендлер для обработки ключевых слов
 async def process_search_keywords(message: types.Message, state: FSMContext):
@@ -68,7 +77,6 @@ async def process_search_keywords(message: types.Message, state: FSMContext):
     await message.answer("Выберите период:", reply_markup=keyboard)
     await state.set_state(SearchSaleState.period_choice)  # Переходим к выбору периода
 
-
 # Хендлер для выбора периода
 async def process_search_period(callback: types.CallbackQuery, state: FSMContext):
     action = callback.data
@@ -76,7 +84,7 @@ async def process_search_period(callback: types.CallbackQuery, state: FSMContext
     query = user_data.get('query')
 
     if action == "search_all":
-        sales = Sale.objects.filter(name__icontains=query)
+        sales = await get_sales(query)  # Используем асинхронный запрос
         if not sales.exists():
             await callback.message.answer("Продажи с такими параметрами не найдены.")
             return
@@ -85,7 +93,6 @@ async def process_search_period(callback: types.CallbackQuery, state: FSMContext
     elif action == "search_period":
         await callback.message.answer("Введите период в формате YYYY-MM-DD - YYYY-MM-DD")
         await state.set_state(SearchSaleState.date_range)  # Переход к вводу дат
-
 
 # Хендлер для обработки ввода даты
 async def process_search_date_range(message: types.Message, state: FSMContext):
@@ -101,10 +108,7 @@ async def process_search_date_range(message: types.Message, state: FSMContext):
     user_data = await state.get_data()
     query = user_data.get('query')
 
-    sales = Sale.objects.filter(
-        name__icontains=query,
-        sale_date__range=(start_date, end_date)
-    )
+    sales = await get_sales(query, start_date, end_date)  # Асинхронно получаем продажи
 
     if not sales.exists():
         await message.answer("Продажи с такими параметрами за указанный период не найдены.")
