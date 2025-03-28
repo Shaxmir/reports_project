@@ -2,7 +2,7 @@ from aiogram import types
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, BufferedInputFile
 from aiogram.filters import Command
-from aiogram.fsm.state import State
+from aiogram.fsm.state import State, StatesGroup
 from datetime import datetime
 from reports.models import Sale
 
@@ -10,7 +10,10 @@ from io import BytesIO
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 
-
+class SearchSaleState(StatesGroup):
+    keywords = State()
+    period_choice = State()
+    date_range = State()
 
 
 def generate_pdf_report(sales, start_date=None, end_date=None):
@@ -45,10 +48,7 @@ def generate_pdf_report(sales, start_date=None, end_date=None):
 
 
 
-class SearchSaleState(State):
-    keywords = State()  # Для ввода ключевых слов
-    period_choice = State()  # Выбор периода
-    date_range = State()  # Даты для периода
+
 
 # Хендлер для команды /search_sale
 async def search_sale_handler(message: types.Message):
