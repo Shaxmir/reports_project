@@ -1,7 +1,7 @@
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, BufferedInputFile
-from aiogram.filters import Command, Text
+from aiogram.filters import Command
 from aiogram.fsm.state import State, StatesGroup
 from datetime import datetime
 from reports.models import Sale
