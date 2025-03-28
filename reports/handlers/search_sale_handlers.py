@@ -1,17 +1,15 @@
 from aiogram import types
 from aiogram.fsm.context import FSMContext
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.fsm.context import FSMContext
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, BufferedInputFile
+from aiogram.filters import Command
 from aiogram.fsm.state import State
-from aiogram.fsm.filters import Command
-from aiogram.types import BufferedInputFile
 from datetime import datetime
 from reports.models import Sale
 
 from io import BytesIO
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-from datetime import datetime
+
 
 
 
