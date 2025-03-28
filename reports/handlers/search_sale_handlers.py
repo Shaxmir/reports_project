@@ -2,16 +2,54 @@ from aiogram import types, F
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
+from aiogram import types
 from aiogram.filters import Command
-from django.db.models import Q
+from aiogram.utils.markdown import hbold
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from django.db.models import Q, Sum
 from reports.models import Sale
-from reports.utils import generate_pdf_report
+from datetime import datetime
+import asyncio
+from io import BytesIO
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
 
 # Создаем группу состояний
 class SearchSaleState(StatesGroup):
     keywords = State()
     period_choice = State()
     date_range = State()
+
+
+def generate_pdf_report(sales, start_date=None, end_date=None):
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    c.setFont("Helvetica", 16)
+    title = "Отчет о продажах"
+    if start_date and end_date:
+        title += f" с {start_date.strftime('%Y-%m-%d')} по {end_date.strftime('%Y-%m-%d')}"
+    c.drawString(100, 750, title)
+    c.setFont("Helvetica", 12)
+    y_position = 730
+    total_quantity = 0
+    total_amount = 0
+    payment_totals = {"cash": 0, "card": 0, "invoice": 0}
+
+    for sale in sales:
+        sale_text = f"{sale.name} - {sale.quantity} шт - {sale.total_price} руб. - {sale.payment_method} - {sale.sale_date}"
+        c.drawString(100, y_position, sale_text)
+        y_position -= 15
+        total_quantity += sale.quantity
+        total_amount += sale.total_price
+        payment_totals[sale.payment_method] += sale.total_price
+
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(100, y_position - 20, f"Всего продано: {total_quantity} шт, на сумму {total_amount} руб.")
+    c.drawString(100, y_position - 40, f"Наличными: {payment_totals['cash']} руб., Картой: {payment_totals['card']} руб., По счету: {payment_totals['invoice']} руб.")
+    c.showPage()
+    c.save()
+    buffer.seek(0)
+    return buffer.getvalue()
 
 # Команда для запуска поиска
 async def search_sale(message: Message, state: FSMContext):
