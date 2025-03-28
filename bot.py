@@ -88,11 +88,11 @@ dp.message.register(search_handler.search_prompt, Command("search"))
 dp.message.register(search_handler.process_search_query, search_handler.SearchStates.waiting_for_date)
 
 # Регистрация хендлеров поиска по товарам
-dp.message.register(search_sale_handlers.search_sale_handler, Command("search_sale"))
-dp.message.register(search_sale_handlers.process_search_keywords, search_sale_handlers.SearchSaleState.keywords)
-dp.callback_query.register(search_sale_handlers.process_search_period, search_sale_handlers.SearchSaleState.period_choice)
-dp.message.register(search_sale_handlers.process_search_date_range, search_sale_handlers.SearchSaleState.date_range)
-
+dp.message.register(search_sale_handlers.search_sale_start, Command("search_sale"))
+dp.message.register(search_sale_handlers.process_search_query, search_sale_handlers.SearchSale.waiting_for_query)
+dp.message.register(search_sale_handlers.process_period_input, search_sale_handlers.SearchSale.waiting_for_period)
+dp.message.register(search_sale_handlers.process_query_with_period, search_sale_handlers.SearchSale.waiting_for_query_with_period)
+dp.callback_query.register(search_sale_handlers.handle_period_choice, F.data.in_(["all_time", "specific_period"]))
 
 # Простой стартовый хендлер
 @dp.message(Command("start"))

@@ -1,115 +1,207 @@
-from aiogram import types
-from aiogram.fsm.context import FSMContext
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, BufferedInputFile
+from aiogram import F, types
 from aiogram.filters import Command
-from aiogram.fsm.state import State, StatesGroup
+from aiogram.types import Message, FSInputFile, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import StatesGroup, State
 from datetime import datetime
-from reports.models import Sale
-
-from io import BytesIO
-from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+import re
+import os
 from asgiref.sync import sync_to_async
 
-class SearchSaleState(StatesGroup):
-    keywords = State()
-    period_choice = State()
-    date_range = State()
+# Регистрация шрифтов для русского языка
+pdfmetrics.registerFont(TTFont('DejaVuSans', 'DejaVuSans.ttf'))
+pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', 'DejaVuSans-Bold.ttf'))
 
-def generate_pdf_report(sales, start_date=None, end_date=None):
-    buffer = BytesIO()
-    c = canvas.Canvas(buffer, pagesize=letter)
-    c.setFont("Helvetica", 16)
-    title = "Отчет о продажах"
-    if start_date and end_date:
-        title += f" с {start_date.strftime('%Y-%m-%d')} по {end_date.strftime('%Y-%m-%d')}"
-    c.drawString(100, 750, title)
-    c.setFont("Helvetica", 12)
-    y_position = 730
+class SearchSale(StatesGroup):
+    waiting_for_query = State()
+    waiting_for_period = State()
+    waiting_for_query_with_period = State()
+
+async def search_sale_start(message: Message, state: FSMContext):
+    help_text = (
+        "🔍 Введите ключевые слова для поиска фанеры (например: '12мм F/W')\n\n"
+        "Поиск учитывает все введенные слова, но не их порядок. "
+        "Регистр букв не имеет значения."
+    )
+    await message.answer(help_text)
+    await state.set_state(SearchSale.waiting_for_query)
+
+async def process_search_query(message: Message, state: FSMContext):
+    search_query = message.text.lower()
+    await state.update_data(search_query=search_query)
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="За все время", callback_data="all_time")],
+        [InlineKeyboardButton(text="За определенный период", callback_data="specific_period")]
+    ])
+
+    await message.answer(
+        "Выберите период для поиска:",
+        reply_markup=keyboard
+    )
+
+async def handle_period_choice(callback: types.CallbackQuery, state: FSMContext):
+    if callback.data == "specific_period":
+        await callback.message.answer(
+            "Введите период в формате:\n"
+            "YYYY-MM-DD - YYYY-MM-DD\n\n"
+            "Например: 2025-03-01 - 2025-03-31"
+        )
+        await state.set_state(SearchSale.waiting_for_period)
+    else:
+        data = await state.get_data()
+        search_query = data['search_query']
+        await generate_and_send_report(callback.message, search_query)
+        await state.clear()
+
+    await callback.answer()
+
+async def process_period_input(message: Message, state: FSMContext):
+    try:
+        date_from, date_to = map(str.strip, message.text.split('-'))
+        date_from = datetime.strptime(date_from.strip(), "%Y-%m-%d").date()
+        date_to = datetime.strptime(date_to.strip(), "%Y-%m-%d").date()
+
+        await state.update_data(date_from=date_from, date_to=date_to)
+        await message.answer(
+            "Теперь повторно введите ключевые слова для поиска в выбранном периоде"
+        )
+        await state.set_state(SearchSale.waiting_for_query_with_period)
+    except Exception as e:
+        await message.answer(
+            "Неправильный формат даты. Пожалуйста, введите период в формате:\n"
+            "YYYY-MM-DD - YYYY-MM-DD\n\n"
+            "Например: 2025-03-01 - 2025-03-31"
+        )
+
+async def process_query_with_period(message: Message, state: FSMContext):
+    search_query = message.text.lower()
+    data = await state.get_data()
+    date_from = data['date_from']
+    date_to = data['date_to']
+
+    await generate_and_send_report(
+        message,
+        search_query,
+        date_from=date_from,
+        date_to=date_to
+    )
+    await state.clear()
+
+@sync_to_async
+def search_sales_in_db(search_query, date_from=None, date_to=None):
+    from reports.models import Sale
+    from django.db.models import Q, Sum
+
+    # Разбиваем запрос на отдельные слова
+    search_words = re.findall(r'\w+', search_query)
+
+    # Создаем условия для поиска по каждому слову
+    q_objects = Q()
+    for word in search_words:
+        q_objects &= Q(name__icontains=word)
+
+    # Добавляем фильтр по дате если нужно
+    if date_from and date_to:
+        q_objects &= Q(sale_date__gte=date_from, sale_date__lte=date_to)
+
+    # Получаем продажи с группировкой по месяцу и году
+    sales = Sale.objects.filter(q_objects).order_by('sale_date')
+
+    if not sales.exists():
+        return None
+
+    # Группируем продажи по месяцам
+    grouped_sales = {}
+    for sale in sales:
+        month_year = sale.sale_date.strftime("%B %Y")
+        if month_year not in grouped_sales:
+            grouped_sales[month_year] = []
+        grouped_sales[month_year].append(sale)
+
+    return grouped_sales
+
+async def generate_and_send_report(message, search_query, date_from=None, date_to=None):
+    grouped_sales = await search_sales_in_db(search_query, date_from, date_to)
+
+    if not grouped_sales:
+        await message.answer(
+            f"По запросу '{search_query}' не найдено продаж" +
+            (f" за период с {date_from} по {date_to}" if date_from else "")
+        )
+        return
+
+    # Создаем PDF отчет
+    filename = f"sales_report_{datetime.now().timestamp()}.pdf"
+    doc = SimpleDocTemplate(filename, pagesize=letter)
+    styles = getSampleStyleSheet()
+    styles['Title'].fontName = 'DejaVuSans-Bold'
+    styles['Normal'].fontName = 'DejaVuSans'
+
+    elements = []
+
+    # Заголовок
+    if date_from:
+        title = f"Отчет по продажам '{search_query}'\nс {date_from} по {date_to}"
+    else:
+        title = f"Отчет по продажам '{search_query}' за все время"
+
+    elements.append(Paragraph(title, styles['Title']))
+    elements.append(Spacer(1, 12))
+
+    # Подсчет общих сумм
     total_quantity = 0
     total_amount = 0
-    payment_totals = {"cash": 0, "card": 0, "invoice": 0}
+    payment_totals = {'cash': 0, 'card': 0, 'invoice': 0}
 
-    for sale in sales:
-        sale_text = f"{sale.name} - {sale.quantity} шт - {sale.total_price} руб. - {sale.payment_method} - {sale.sale_date}"
-        c.drawString(100, y_position, sale_text)
-        y_position -= 15
-        total_quantity += sale.quantity
-        total_amount += sale.total_price
-        payment_totals[sale.payment_method] += sale.total_price
+    # Добавляем данные по месяцам
+    for month_year, sales in grouped_sales.items():
+        elements.append(Paragraph(month_year, styles['Heading2']))
 
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(100, y_position - 20, f"Всего продано: {total_quantity} шт, на сумму {total_amount} руб.")
-    c.drawString(100, y_position - 40, f"Наличными: {payment_totals['cash']} руб., Картой: {payment_totals['card']} руб., По счету: {payment_totals['invoice']} руб.")
-    c.showPage()
-    c.save()
-    buffer.seek(0)
-    return buffer.getvalue()
+        for sale in sales:
+            elements.append(Paragraph(
+                f"{sale.name} - {sale.quantity} шт - {sale.total_price} руб - "
+                f"{get_payment_method(sale.payment_method)} - {sale.sale_date.strftime('%d.%m.%Y')}",
+                styles['Normal']
+            ))
 
-@sync_to_async
-def get_sales(query, start_date=None, end_date=None):
-    if start_date and end_date:
-        return Sale.objects.filter(name__icontains=query, sale_date__range=(start_date, end_date))
-    return Sale.objects.filter(name__icontains=query)
+            # Считаем общие суммы
+            total_quantity += sale.quantity
+            total_amount += sale.total_price
+            payment_totals[sale.payment_method] += sale.total_price
 
-@sync_to_async
-def check_sales_exist(sales):
-    return sales.exists()
+        elements.append(Spacer(1, 12))
 
-async def search_sale_handler(message: types.Message, state: FSMContext):
-    await message.answer("Введите ключевые слова для поиска товаров:")
-    await state.set_state(SearchSaleState.keywords)
+    # Добавляем итоговую информацию
+    elements.append(Paragraph("Итого:", styles['Heading2']))
+    elements.append(Paragraph(f"Общее количество: {total_quantity} шт", styles['Normal']))
+    elements.append(Paragraph(f"Общая сумма: {total_amount} руб", styles['Normal']))
+    elements.append(Paragraph(
+        f"Наличными: {payment_totals['cash']} руб | "
+        f"Картой: {payment_totals['card']} руб | "
+        f"По счету: {payment_totals['invoice']} руб",
+        styles['Normal']
+    ))
 
-async def process_search_keywords(message: types.Message, state: FSMContext):
-    query = message.text.strip()
-    await state.update_data(query=query)
+    doc.build(elements)
 
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="За все время", callback_data="search_all")],
-            [InlineKeyboardButton(text="За определенный период", callback_data="search_period")]
-        ]
+    # Отправляем файл
+    file = FSInputFile(filename)
+    await message.answer_document(
+        file,
+        caption=title
     )
-    await message.answer("Выберите период:", reply_markup=keyboard)
-    await state.set_state(SearchSaleState.period_choice)
+    os.remove(filename)
 
-async def process_search_period(callback: types.CallbackQuery, state: FSMContext):
-    action = callback.data
-    user_data = await state.get_data()
-    query = user_data.get('query')
-
-    if action == "search_all":
-        sales = await get_sales(query)
-        sales_exist = await check_sales_exist(sales)  # Используем асинхронную проверку
-        if not sales_exist:
-            await callback.message.answer("Продажи с такими параметрами не найдены.")
-            return
-        pdf_data = generate_pdf_report(sales)
-        await callback.message.answer_document(BufferedInputFile(pdf_data, filename="sales_report.pdf"))
-    elif action == "search_period":
-        await callback.message.answer("Введите период в формате YYYY-MM-DD - YYYY-MM-DD")
-        await state.set_state(SearchSaleState.date_range)
-
-async def process_search_date_range(message: types.Message, state: FSMContext):
-    try:
-        period = message.text.strip()
-        start_date, end_date = map(str.strip, period.split("-"))
-        start_date = datetime.strptime(start_date, "%Y-%m-%d")
-        end_date = datetime.strptime(end_date, "%Y-%m-%d")
-    except ValueError:
-        await message.answer("Некорректный формат. Введите даты в формате YYYY-MM-DD - YYYY-MM-DD")
-        return
-
-    user_data = await state.get_data()
-    query = user_data.get('query')
-
-    sales = await get_sales(query, start_date, end_date)
-    sales_exist = await check_sales_exist(sales)  # Используем асинхронную проверку
-
-    if not sales_exist:
-        await message.answer("Продажи с такими параметрами за указанный период не найдены.")
-        return
-
-    pdf_data = generate_pdf_report(sales, start_date, end_date)
-    await message.answer_document(BufferedInputFile(pdf_data, filename="sales_report.pdf"))
-    await state.finish()
+def get_payment_method(method):
+    methods = {
+        'cash': 'Наличными',
+        'card': 'Картой',
+        'invoice': 'По счету'
+    }
+    return methods.get(method, method)
