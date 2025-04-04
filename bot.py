@@ -23,6 +23,7 @@ from reports.handlers import sale_handlers, expense_handlers, cash_handlers, rep
 from reports.handlers.expenses_edit_handlers import EditExpenseState
 from reports.handlers.search_handler import SearchStates
 from reports.filters.role_filters import IsAdmin, IsCreator
+from reports.buttons.menu_buttons import keyboard
 
 # Регистрируем хендлеры для продажи
 dp.message.register(sale_handlers.start_sale, Command("sale"), IsAdmin())
@@ -99,7 +100,7 @@ dp.callback_query.register(search_sale_handlers.handle_period_choice, F.data.in_
 async def start_cmd(message: Message):
     user_id = message.from_user.id
     print(f"User ID: {user_id}")
-    await message.answer(f"Привет! Отправь команду или выбери ее в меню комнад.\n/sale, чтобы добавить продажу\n/expense для расхода\n/cash для пополнения кассы\n/report для отчета\n/all_sales для просмотра сегодняшних продаж\n/report_pdf получить отчет в формате PDF")
+    await message.answer(f"Привет! Это бот поможет тебе составлять отчеты. Пользуйся кнопками с меню панели", reply_markup=keyboard)
 
 @dp.message(Command("myid"))
 async def start_cmd(message: Message):
