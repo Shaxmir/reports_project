@@ -27,6 +27,7 @@ from reports.buttons.menu_buttons import keyboard
 
 # Регистрируем хендлеры для продажи
 dp.message.register(sale_handlers.start_sale, Command("sale"), IsAdmin())
+dp.message.register(sale_handlers.start_sale, F.text.casefold() == "➕ продажа", IsAdmin())
 dp.message.register(sale_handlers.process_name, sale_handlers.SaleState.name)
 dp.message.register(sale_handlers.process_quantity, sale_handlers.SaleState.quantity)
 dp.message.register(sale_handlers.process_price, sale_handlers.SaleState.price)
@@ -37,6 +38,7 @@ dp.message.register(sale_handlers.process_comment, sale_handlers.SaleState.comme
 
 # Регистрация обработчиков для callback-запросов
 dp.message.register(sale_edit_handlers.get_all_sales, Command("sales"), IsAdmin())
+dp.message.register(sale_edit_handlers.get_all_sales, F.text.casefold() == "✏️ ред. продажу", IsAdmin())
 dp.callback_query.register(sale_edit_handlers.show_sale_info, lambda c: c.data.startswith("sale_"), IsAdmin())
 dp.callback_query.register(sale_edit_handlers.delete_sale, lambda c: c.data.startswith("delete_sale_"), IsAdmin())
 dp.callback_query.register(sale_edit_handlers.start_edit_sale, lambda c: c.data.startswith("edit_sale_"), IsAdmin())
@@ -50,12 +52,14 @@ dp.message.register(sale_edit_handlers.process_edit_comment, sale_edit_handlers.
 
 # Регистрируем хендлеры для расходов
 dp.message.register(expense_handlers.start_expense, Command("expense"), IsAdmin())
+dp.message.register(expense_handlers.start_expense, F.text.casefold() == "➕ расход", IsAdmin())
 dp.message.register(expense_handlers.process_reason, expense_handlers.ExpenseState.reason)
 dp.message.register(expense_handlers.process_amount, expense_handlers.ExpenseState.amount)
 dp.message.register(expense_handlers.process_expense_comment, expense_handlers.ExpenseState.comment)
 
 # Редактирование и удаление расходов
 dp.message.register(expenses_edit_handlers.get_expenses, Command("expenses"), IsAdmin())  # Вывод списка расходов
+dp.message.register(expenses_edit_handlers.get_expenses, F.text.casefold() == "✏️ ред. расход", IsAdmin())  # Вывод списка расходов
 dp.callback_query.register(expenses_edit_handlers.delete_expense_callback, lambda c: c.data.startswith("delete_expense_"), IsAdmin())  # Удаление
 dp.callback_query.register(expenses_edit_handlers.edit_expense_callback, lambda c: c.data.startswith("edit_expense_"), IsAdmin())  # Изменение
 dp.message.register(expenses_edit_handlers.edit_expense_amount, EditExpenseState.amount)  # Ввод суммы
@@ -64,15 +68,20 @@ dp.message.register(expenses_edit_handlers.edit_expense_reason, EditExpenseState
 
 # Регистрируем хендлеры для работы с кассой
 dp.message.register(cash_handlers.start_cash, Command("cash"), IsAdmin())
+dp.message.register(cash_handlers.start_cash, F.text.casefold() == "➕ в кассу", IsAdmin())
 dp.message.register(cash_handlers.process_cash, cash_handlers.CashState.amount)
 
 # Регистрируем хендлеры для отчетов
 dp.message.register(report_handlers.send_report_text, Command("report"))
+dp.message.register(report_handlers.send_report_text, F.text.casefold() == "📊 отчет за сегодня")
 dp.message.register(report_handlers.send_report_pdf, Command("report_pdf"))
+dp.message.register(report_handlers.send_report_pdf, F.text.casefold() == "📄 отчет в PDF")
 dp.message.register(sale_handlers.get_all_sales, Command("all_sales"))
+dp.message.register(sale_handlers.get_all_sales, F.text.casefold() == "💰 продажи на сегодня")
 
 # Отчеты старые
 dp.message.register(report_handlers.handle_report_by_date, Command("report_by_date"))
+dp.message.register(report_handlers.handle_report_by_date, F.text.casefold() == "📅 старые отчеты")
 
 # Регистрируем callback-хендлеры для отчетов
 dp.callback_query.register(report_handlers.handle_report_date_selection, F.data.startswith("report_date:"))
@@ -80,16 +89,19 @@ dp.callback_query.register(report_handlers.handle_report_pagination, F.data.star
 
 # Отчеты за месяц
 dp.message.register(reports_monthly_handlers.monthly_report_start, Command("monthly_report"))
+dp.message.register(reports_monthly_handlers.monthly_report_start, F.text.casefold() == "📆 Отчеты за месяц")
 dp.callback_query.register(reports_monthly_handlers.handle_year_selection, F.data.startswith("year_"))
 dp.callback_query.register(reports_monthly_handlers.handle_month_selection, F.data.startswith("month_"))
 
 
 # Регистрируем хендлеры для поиска
 dp.message.register(search_handler.search_prompt, Command("search"))
+dp.message.register(search_handler.search_prompt, F.text.casefold() == "🔎 Поиск")
 dp.message.register(search_handler.process_search_query, search_handler.SearchStates.waiting_for_date)
 
 # Регистрация хендлеров поиска по товарам
 dp.message.register(search_sale_handlers.search_sale_start, Command("search_sale"))
+dp.message.register(search_sale_handlers.search_sale_start, F.text.casefold() == "🔎 поиск подробный")
 dp.message.register(search_sale_handlers.process_search_query, search_sale_handlers.SearchSale.waiting_for_query)
 dp.message.register(search_sale_handlers.process_period_input, search_sale_handlers.SearchSale.waiting_for_period)
 dp.message.register(search_sale_handlers.process_query_with_period, search_sale_handlers.SearchSale.waiting_for_query_with_period)
