@@ -75,7 +75,7 @@ dp.message.register(cash_handlers.process_cash, cash_handlers.CashState.amount)
 dp.message.register(report_handlers.send_report_text, Command("report"))
 dp.message.register(report_handlers.send_report_text, F.text.casefold() == "📊 отчет за сегодня")
 dp.message.register(report_handlers.send_report_pdf, Command("report_pdf"))
-dp.message.register(report_handlers.send_report_pdf, F.text.casefold() == "📄 отчет в PDF")
+dp.message.register(report_handlers.send_report_pdf, F.text.casefold() == "📄 отчет в pdf")
 dp.message.register(sale_handlers.get_all_sales, Command("all_sales"))
 dp.message.register(sale_handlers.get_all_sales, F.text.casefold() == "💰 продажи на сегодня")
 
@@ -89,14 +89,14 @@ dp.callback_query.register(report_handlers.handle_report_pagination, F.data.star
 
 # Отчеты за месяц
 dp.message.register(reports_monthly_handlers.monthly_report_start, Command("monthly_report"))
-dp.message.register(reports_monthly_handlers.monthly_report_start, F.text.casefold() == "📆 Отчеты за месяц")
+dp.message.register(reports_monthly_handlers.monthly_report_start, F.text.casefold() == "📆 отчеты за месяц")
 dp.callback_query.register(reports_monthly_handlers.handle_year_selection, F.data.startswith("year_"))
 dp.callback_query.register(reports_monthly_handlers.handle_month_selection, F.data.startswith("month_"))
 
 
 # Регистрируем хендлеры для поиска
 dp.message.register(search_handler.search_prompt, Command("search"))
-dp.message.register(search_handler.search_prompt, F.text.casefold() == "🔎 Поиск")
+dp.message.register(search_handler.search_prompt, F.text.casefold() == "🔎 поиск по дате")
 dp.message.register(search_handler.process_search_query, search_handler.SearchStates.waiting_for_date)
 
 # Регистрация хендлеров поиска по товарам
